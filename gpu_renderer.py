@@ -2,9 +2,11 @@ import pygame
 import moderngl
 import numpy as np
 import time
+import math
 
 W, H = 800, 600
 
+# ================= SHAPES =================
 def get_shape(shape):
     if shape == "triangle":
         return np.array([
@@ -25,39 +27,66 @@ def get_shape(shape):
             [-0.3, -0.15], [ 0.3,  0.15], [-0.3,  0.15]
         ], dtype="f4")
 
+# ================= GPU PIPELINE =================
 def run_gpu(shape_name):
     pygame.init()
-    screen = pygame.display.set_mode(
+    pygame.display.set_mode(
         (W, H), pygame.OPENGL | pygame.DOUBLEBUF
     )
 
     ctx = moderngl.create_context()
     ctx.viewport = (0, 0, W, H)
 
+    # ===== SHADERS =====
     prog = ctx.program(
         vertex_shader="""
         #version 330
         in vec2 in_vert;
+        in vec3 in_color;
+
         uniform float angle;
         uniform vec2 offset;
+
+        out vec3 v_color;
+
         void main() {
-            mat2 r = mat2(cos(angle), -sin(angle),
-                          sin(angle),  cos(angle));
+            mat2 r = mat2(
+                cos(angle), -sin(angle),
+                sin(angle),  cos(angle)
+            );
             gl_Position = vec4(r * in_vert + offset, 0.0, 1.0);
+            v_color = in_color;
         }
         """,
         fragment_shader="""
         #version 330
+        in vec3 v_color;
         out vec4 f;
+
         void main() {
-            f = vec4(1.0, 0.3, 0.3, 1.0);
+            f = vec4(v_color, 1.0);
         }
         """
     )
 
+    # ===== GEOMETRY =====
     shape = get_shape(shape_name)
-    vbo = ctx.buffer(shape.tobytes())
-    vao = ctx.simple_vertex_array(prog, vbo, "in_vert")
+
+    # CPU-equivalent vertex colors
+    VERTEX_COLORS = np.array([
+        [1.0, 0.0, 0.0],  # red
+        [0.0, 1.0, 0.0],  # green
+        [0.0, 0.0, 1.0],  # blue
+    ], dtype="f4")
+
+    colors = np.tile(VERTEX_COLORS, (len(shape) // 3, 1))
+
+    # Interleave position + color
+    vbo = ctx.buffer(np.hstack([shape, colors]).tobytes())
+    vao = ctx.simple_vertex_array(
+        prog, vbo,
+        "in_vert", "in_color"
+    )
 
     pos = np.array([0.0, 0.0], dtype="f4")
     angle = 0.0
@@ -89,7 +118,7 @@ def run_gpu(shape_name):
         prog["angle"].value = angle
         prog["offset"].value = tuple(pos)
 
-        ctx.clear()
+        ctx.clear(0.1, 0.1, 0.1)
         vao.render()
         ctx.finish()
 
