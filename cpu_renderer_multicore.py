@@ -145,7 +145,7 @@ def run_cpu_multicore(shape_name):
             p.join()
 
         button_rect = pygame.Rect(W - 210, H - 60, 190, 40)
-        switch_to_gpu = False
+        switch_to_vec = False
 
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
@@ -154,7 +154,7 @@ def run_cpu_multicore(shape_name):
                 running = False
             if e.type == pygame.MOUSEBUTTONDOWN:
                 if button_rect.collidepoint(e.pos):
-                    switch_to_gpu = True
+                    switch_to_vec = True
                     running = False
 
 
@@ -167,7 +167,7 @@ def run_cpu_multicore(shape_name):
 
         pygame.draw.rect(screen, (200, 70, 70), button_rect)
         screen.blit(
-            font.render("Switch to GPU", True, WHITE),
+            font.render("Switch to Vectorized", True, WHITE),
             (button_rect.x + 25, button_rect.y + 10)
         )
 
@@ -182,7 +182,7 @@ def run_cpu_multicore(shape_name):
     avg_fps = 1000 / avg_ms
 
     return {
-        "action": "gpu" if switch_to_gpu else "exit",
+        "action": "vec" if switch_to_vec else "exit",
         "avg_ms": avg_ms,
         "avg_fps": avg_fps
     }
