@@ -15,6 +15,7 @@ VERTEX_COLORS = np.array([
 ], dtype=float)
 
 # ================= SHAPES =================
+# uses bresenham line algorithm
 def draw_line_cpu(surface, x0, y0, x1, y1, color):
     x0, y0 = int(x0), int(y0)
     x1, y1 = int(x1), int(y1)
@@ -123,7 +124,7 @@ def run_cpu(shape_name):
     button_rect = pygame.Rect(W - 210, H - 60, 190, 40)
 
     running = True
-    switch_to_gpu = False
+    switch_to_multicore = False
 
     depth_buffer = np.full((W, H), np.inf, dtype=float)
 
@@ -137,7 +138,7 @@ def run_cpu(shape_name):
                 running = False
             if e.type == pygame.MOUSEBUTTONDOWN:
                 if button_rect.collidepoint(e.pos):
-                    switch_to_gpu = True
+                    switch_to_multicore = True
                     running = False
             if e.type == pygame.KEYDOWN:
                 if e.key == pygame.K_m:
@@ -193,9 +194,10 @@ def run_cpu(shape_name):
         screen.blit(font.render(f"CPU MODE | FPS: {fps:.1f}", True, WHITE), (10, 10))
         screen.blit(font.render("Pure Software Pipeline", True, WHITE), (10, 30))
 
-        pygame.draw.rect(screen, (70, 70, 200), button_rect)
-        screen.blit(font.render("Switch to GPU", True, WHITE),
-                    (button_rect.x + 20, button_rect.y + 10))
+        pygame.draw.rect(screen, (70, 200, 70), button_rect)
+        screen.blit(font.render("Switch to Multicore", True, WHITE),
+            (button_rect.x + 10, button_rect.y + 10))
+
 
         pygame.display.flip()
         clock.tick(60)
@@ -208,7 +210,7 @@ def run_cpu(shape_name):
     avg_fps = 1000 / avg_ms
 
     return {
-        "action": "switch" if switch_to_gpu else "exit",
+        "action": "multicore" if switch_to_multicore else "exit",
         "avg_ms": avg_ms,
         "avg_fps": avg_fps
     }
